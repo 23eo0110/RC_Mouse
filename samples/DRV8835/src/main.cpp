@@ -1,32 +1,88 @@
-#include <M5Core2.h>
-#define MOTOR_PIN_F        33 // to DC Motor Driver FIN
-#define MOTOR_PIN_R        32  // to DC Motor Driver RIN
-#define MOTOR_PWM_F        0  // PWM CHANNEL
-#define MOTOR_PWM_R        1  // PWM CHANNEL
+#include <Arduino.h>
 
-void setup() {
-  // set Grove into GPIO32/33
-  M5.begin(true, true, true, false);
+//Motor variables
+const int R_Forward = 2; // GPIO2
+const int R_Back = 3; // GPIO3
+const int L_Forward = 4; // GPIO4
+const int L_Back = 5; // GPIO5
 
-  //PWM Init
-  pinMode(MOTOR_PIN_F, OUTPUT);
-  pinMode(MOTOR_PIN_R, OUTPUT);
-  ledcSetup(MOTOR_PWM_F, 490, 8); //CHANNEL, FREQ, BIT
-  ledcSetup(MOTOR_PWM_R, 490, 8);
-  ledcAttachPin(MOTOR_PIN_F, MOTOR_PWM_F);
-  ledcAttachPin(MOTOR_PIN_R, MOTOR_PWM_R);
+void DRV8835(int in1, int in2, int in3, int in4) {
+  analogWrite(R_Forward, in1);
+  analogWrite(R_Back, in2);
+  analogWrite(L_Forward, in3);
+  analogWrite(L_Back, in4);
 }
 
-void loop(){
-  ledcWrite(MOTOR_PWM_F,255); // Forward
-  ledcWrite(MOTOR_PWM_R,0);
-  delay(3000);
+void stop() {
+  DRV8835(0, 0, 0, 0);
+  delay(1000);
+}
 
-  ledcWrite(MOTOR_PWM_R,0); // Stop
-  ledcWrite(MOTOR_PWM_F,0);
-  delay(3000);
+void setup() {
 
-  ledcWrite(MOTOR_PWM_R,255); // Reverse
-  ledcWrite(MOTOR_PWM_F,0);
-  delay(3000);
+  // Motor setup
+   pinMode(R_Forward, OUTPUT);
+   pinMode(R_Back, OUTPUT);
+   pinMode(L_Forward, OUTPUT);
+   pinMode(L_Back, OUTPUT);
+
+}
+
+void loop() {
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(i, 0, 0, 0); // Right motor forward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(0, 0, i, 0); // Left motor forward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(0, i, 0, 0); // Right motor backward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(0, 0, 0, i); // Left motor backward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(i, 0, i, 0); // Right motor forward, Left motor forward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(0, i, 0, i); // Right motor backward, Left motor backward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(i, 0, 0, i); // Right motor forward, Left motor backward
+  delay(10);
+  }
+
+  stop();
+
+  for (int i = 0; i <= 255; i++) {
+  DRV8835(0, i, i, 0); // Right motor backward, Left motor forward
+  delay(10);
+  }
+
+  stop();
+
 }
