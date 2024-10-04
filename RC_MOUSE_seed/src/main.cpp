@@ -66,11 +66,11 @@ void loop() {
     double right = doc["right_speed"];
 
     if(left > 0){
-      analogWrite(L_Forward, left);
+      analogWrite(L_Forward, left * 255);
       leftForward = left;
       leftBackward = 0;
     } else if(left < 0) {
-      analogWrite(L_Back, -left);
+      analogWrite(L_Back, -left * 255);
       leftForward = 0;
       leftBackward = -left;
     } else {
@@ -81,11 +81,11 @@ void loop() {
     }
 
     if(right > 0){
-      analogWrite(R_Forward, right);
+      analogWrite(R_Forward, right * 255);
       rightForward = right;
       rightBackward = 0;
     } else if(right < 0) {
-      analogWrite(R_Back, -right);
+      analogWrite(R_Back, -right * 255);
       rightForward = 0;
       rightBackward = -right;
     } else {
