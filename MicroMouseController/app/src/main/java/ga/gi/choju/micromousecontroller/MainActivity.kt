@@ -7,8 +7,11 @@ import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.Space
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -31,6 +34,8 @@ class MainActivity : AppCompatActivity() {
 
     private var turnRate = 0.0
 
+    private var adjustRate = 0.0
+
     private var rightSpeed: Double = 0.0
     private var leftSpeed: Double = 0.0
     private var leftIndex: Int = -1
@@ -45,8 +50,6 @@ class MainActivity : AppCompatActivity() {
     private var singleTapCount = 0
 
     private var startEpocTime:Long = -1
-
-    lateinit var turnRateText: TextView
 
     private lateinit var bind: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -221,7 +224,7 @@ class MainActivity : AppCompatActivity() {
                         .setView(LinearLayout(this).apply {
                             orientation = LinearLayout.VERTICAL
                             setPadding(12)
-                            turnRateText = TextView(this@MainActivity).apply {
+                            val turnRateText = TextView(this@MainActivity).apply {
                                 text = getTurnRateText()
                             }
                             addView(turnRateText)
@@ -249,6 +252,35 @@ class MainActivity : AppCompatActivity() {
 
                                 })
                             })
+                            val adjustTextView = TextView(this@MainActivity).apply {
+                                text = "左右差: ${String.format("%.2f", adjustRate)}"
+                            }
+                            val adjustSeekBar = SeekBar(this@MainActivity).apply {
+                                max = 2000
+                                progress = (adjustRate * 1000).toInt() + 1000
+                                setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+                                    override fun onProgressChanged(
+                                        seekBar: SeekBar?,
+                                        progress: Int,
+                                        fromUser: Boolean
+                                    ) {
+                                        val value = progress - 1000
+                                        adjustRate = value.toDouble() / 1000
+                                        adjustTextView.text = "左右差: ${String.format("%.2f", adjustRate)}"
+                                    }
+
+                                    override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                                        //
+                                    }
+
+                                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                                        //
+                                    }
+
+                                })
+                            }
+                            addView(adjustTextView)
+                            addView(adjustSeekBar)
                         })
                         .setTitle("回転率変更")
                         .setPositiveButton("OK", null)
@@ -273,6 +305,12 @@ class MainActivity : AppCompatActivity() {
         } else {
             rightSpeed = speed
             leftSpeed = speed
+        }
+
+        if(adjustRate > 0){
+            leftSpeed = (leftSpeed - leftSpeed * adjustRate * 0.1)
+        } else if(adjustRate < 0){
+            rightSpeed = (rightSpeed + rightSpeed * adjustRate * 0.1)
         }
 
         bind.textView.text = bind.textView.text.toString() + "leftSpeed: $leftSpeed\nrightSpeed: $rightSpeed"
