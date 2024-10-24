@@ -25,11 +25,15 @@ double rightForward = 0.0;
 double rightBackward = 0.0;
 
 // バッテリー電圧を読み取るADCピン
-const int batteryPin = A0;
-// 過放電と判断する電圧の閾値（例: 3.0V）
-const float voltageThreshold = 3.0;
-// LEDピン
-const int ledPin = 13;
+const int batteryPin = A1;
+const float threshold_1 = 4.1; //over charge threshhold
+const float threshold_2 = 3.1; //over discharge threshhold
+bool battState = false;
+const int tail_lamp = D10; // tail lamp led : D10
+const int drv_vdd = D7;  // driver VDD : D7
+
+
+
 
 // タイマー設定
 hw_timer_t *timer = NULL;
@@ -41,18 +45,13 @@ void IRAM_ATTR onTimer() {
     Vbatt = Vbatt + analogReadMilliVolts(batteryPin); // ADC with correction
   }
   float Vbattf = 2 * Vbatt / 16 / 1000.0; // attenuation ratio 1/2, mV --> V
-  Serial.println(Vbattf, 3);
 
   // 過放電を検出
-  if (Vbattf < voltageThreshold) {
-    // 過放電保護動作（LEDを点灯）
-    digitalWrite(ledPin, HIGH);
-    // デバイスをスリープモードに移行
-    Serial.println("Entering deep sleep mode to prevent over-discharge.");
-    esp_deep_sleep_start();
-  } else {
-    // LEDを消灯
-    digitalWrite(ledPin, LOW);
+  if (Vbattf < threshold_2 ) {
+    battState = true;
+//    digitalWrite(drv_vdd, LOW);
+  } else if (Vbattf > threshold_1) {
+    battState = false;
   }
 }
 
@@ -75,9 +74,10 @@ void setup() {
 
   // バッテリーモニタリングの設定
   pinMode(batteryPin, INPUT); // ADC
-  pinMode(ledPin, OUTPUT);    // LED
-  digitalWrite(ledPin, LOW);  // LEDを消灯
-
+  pinMode(tail_lamp, OUTPUT); // set tail lamp pin to output mode
+  pinMode(drv_vdd, OUTPUT); // set driver VDD pin to output mode
+  digitalWrite(tail_lamp, LOW); // initial state of tail lamp
+  digitalWrite(drv_vdd, HIGH); // initial state of driver VDD
   // タイマーの初期化
   timer = timerBegin(0, 80, true); // タイマー0、80分周（1usごとにカウント）、アップカウント
   timerAttachInterrupt(timer, &onTimer, true); // 割込みハンドラを設定
@@ -153,5 +153,12 @@ void loop() {
     // recieveUdp.println("Received");
 
     // recieveUdp.endPacket();
+  }
+
+    if(battState){
+    digitalWrite(tail_lamp, HIGH);
+    delay(300);
+    digitalWrite(tail_lamp, LOW);
+    delay(300);
   }
 }

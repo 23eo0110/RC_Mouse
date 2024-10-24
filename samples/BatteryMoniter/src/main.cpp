@@ -1,17 +1,17 @@
 #include <Arduino.h>
 
-// バッテリー電圧を読み取るADCピン
+// Battery Check Pin
 const int batteryPin = A0;
-// 過放電と判断する電圧の閾値（例: 3.0V）
-const float voltageThreshold = 3.0;
-// LEDピン
-const int ledPin = 13;
+// over discharge threshhold（<=3.2V）
+const float voltageThreshold = 3.2;
+// LED Pin
+const int ledPin = D10;
 
 void setup() {
   Serial.begin(115200);
   pinMode(batteryPin, INPUT); // ADC
   pinMode(ledPin, OUTPUT);    // LED
-  digitalWrite(ledPin, LOW);  // LEDを消灯
+  digitalWrite(ledPin, LOW);  // LED OFF
 }
 
 void loop() {
@@ -27,8 +27,8 @@ void loop() {
     // 過放電保護動作（LEDを点灯）
     digitalWrite(ledPin, HIGH);
     // デバイスをスリープモードに移行
-    Serial.println("Entering deep sleep mode to prevent over-discharge.");
-    esp_deep_sleep_start();
+    //Serial.println("Entering deep sleep mode to prevent over-discharge.");
+    //esp_deep_sleep_start();
   } else {
     // LEDを消灯
     digitalWrite(ledPin, LOW);
