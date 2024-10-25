@@ -3,7 +3,6 @@
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 
-// WiFi設定
 const char* ssid = "esp32-c softAP";        // WiFiのSSID
 const char* password = "hogefugapiyo"; // WiFiのパスワード
 const char* hostName = "esp32-c3";      // mDNSでのホスト名
@@ -13,47 +12,17 @@ char incomingPacket[255];  // 受信するデータを格納するバッファ
 WiFiUDP udp;
 WiFiUDP recieveUdp;
 
-// Motor variables
-const int R_Forward = 2; // GPIO2
-const int R_Back = 3; // GPIO3
-const int L_Forward = 4; // GPIO4
-const int L_Back = 5; // GPIO5
+
+//Motor variables
+const int R_Forward = 4; // GPIO2
+const int R_Back = 5; // GPIO3
+const int L_Forward = 6; // GPIO4
+const int L_Back = 7; // GPIO5
 
 double leftForward = 0.0;
 double leftBackward = 0.0;
 double rightForward = 0.0;
 double rightBackward = 0.0;
-
-// バッテリー電圧を読み取るADCピン
-const int batteryPin = A1;
-const float threshold_1 = 4.1; //over charge threshhold
-const float threshold_2 = 3.1; //over discharge threshhold
-bool battState = false;
-const int tail_lamp = D10; // tail lamp led : D10
-const int drv_vdd = D7;  // driver VDD : D7
-
-
-
-
-// タイマー設定
-hw_timer_t *timer = NULL;
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-void IRAM_ATTR onTimer() {
-  static uint32_t Vbatt = 0;
-  for(int i = 0; i < 16; i++) {
-    Vbatt = Vbatt + analogReadMilliVolts(batteryPin); // ADC with correction
-  }
-  float Vbattf = 2 * Vbatt / 16 / 1000.0; // attenuation ratio 1/2, mV --> V
-
-  // 過放電を検出
-  if (Vbattf < threshold_2 ) {
-    battState = true;
-//    digitalWrite(drv_vdd, LOW);
-  } else if (Vbattf > threshold_1) {
-    battState = false;
-  }
-}
 
 void setup() {
   delay(1000);
@@ -67,23 +36,13 @@ void setup() {
   Serial.printf("UDP server started on port %u\n", localUdpPort);
 
   // Motor setup
-  pinMode(R_Forward, OUTPUT);
-  pinMode(R_Back, OUTPUT);
-  pinMode(L_Forward, OUTPUT);
-  pinMode(L_Back, OUTPUT);
+   pinMode(R_Forward, OUTPUT);
+   pinMode(R_Back, OUTPUT);
+   pinMode(L_Forward, OUTPUT);
+   pinMode(L_Back, OUTPUT);
 
-  // バッテリーモニタリングの設定
-  pinMode(batteryPin, INPUT); // ADC
-  pinMode(tail_lamp, OUTPUT); // set tail lamp pin to output mode
-  pinMode(drv_vdd, OUTPUT); // set driver VDD pin to output mode
-  digitalWrite(tail_lamp, LOW); // initial state of tail lamp
-  digitalWrite(drv_vdd, HIGH); // initial state of driver VDD
-  // タイマーの初期化
-  timer = timerBegin(0, 80, true); // タイマー0、80分周（1usごとにカウント）、アップカウント
-  timerAttachInterrupt(timer, &onTimer, true); // 割込みハンドラを設定
-  timerAlarmWrite(timer, 1000000, true); // 1秒ごとに割込み
-  timerAlarmEnable(timer); // タイマー割込みを有効化
 }
+
 
 void loop() {
   int packetSize = udp.parsePacket();
@@ -94,7 +53,7 @@ void loop() {
     }
     // Serial.printf("Received packet: '%s'\n", incomingPacket);
 
-    StaticJsonDocument<200> doc;
+    JsonDocument doc;
     DeserializationError error = deserializeJson(doc, incomingPacket);
 
     if(error){
@@ -153,12 +112,5 @@ void loop() {
     // recieveUdp.println("Received");
 
     // recieveUdp.endPacket();
-  }
-
-    if(battState){
-    digitalWrite(tail_lamp, HIGH);
-    delay(300);
-    digitalWrite(tail_lamp, LOW);
-    delay(300);
   }
 }
