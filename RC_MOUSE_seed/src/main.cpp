@@ -3,28 +3,28 @@
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "esp32-c softAP";        // WiFiのSSID
-const char* password = "hogefugapiyo"; // WiFiのパスワード
-const char* hostName = "esp32-c3";      // mDNSでのホスト名
+const char *ssid = "esp32-c softAP";   // WiFiのSSID
+const char *password = "hogefugapiyo"; // WiFiのパスワード
+const char *hostName = "esp32-c3";     // mDNSでのホスト名
 
-const unsigned int localUdpPort = 8888;  // 受信するUDPポート番号
-char incomingPacket[255];  // 受信するデータを格納するバッファ
+const unsigned int localUdpPort = 8888; // 受信するUDPポート番号
+char incomingPacket[255];               // 受信するデータを格納するバッファ
 WiFiUDP udp;
 WiFiUDP recieveUdp;
 
-
-//Motor variables
+// Motor variables
 const int R_Forward = 2; // GPIO2
-const int R_Back = 3; // GPIO3
+const int R_Back = 3;    // GPIO3
 const int L_Forward = 4; // GPIO4
-const int L_Back = 5; // GPIO5
+const int L_Back = 5;    // GPIO5
 
 double leftForward = 0.0;
 double leftBackward = 0.0;
 double rightForward = 0.0;
 double rightBackward = 0.0;
 
-void setup() {
+void setup()
+{
   delay(1000);
   Serial.begin(115200);
   WiFi.softAP(ssid, password);
@@ -36,27 +36,29 @@ void setup() {
   Serial.printf("UDP server started on port %u\n", localUdpPort);
 
   // Motor setup
-   pinMode(R_Forward, OUTPUT);
-   pinMode(R_Back, OUTPUT);
-   pinMode(L_Forward, OUTPUT);
-   pinMode(L_Back, OUTPUT);
-
+  pinMode(R_Forward, OUTPUT);
+  pinMode(R_Back, OUTPUT);
+  pinMode(L_Forward, OUTPUT);
+  pinMode(L_Back, OUTPUT);
 }
 
-
-void loop() {
+void loop()
+{
   int packetSize = udp.parsePacket();
-  if (packetSize) {
+  if (packetSize)
+  {
     int len = udp.read(incomingPacket, 255);
-    if (len > 0) {
-      incomingPacket[len] = 0;  // Null-terminate the string
+    if (len > 0)
+    {
+      incomingPacket[len] = 0; // Null-terminate the string
     }
     // Serial.printf("Received packet: '%s'\n", incomingPacket);
 
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, incomingPacket);
 
-    if(error){
+    if (error)
+    {
       Serial.print(F("deserializeJson() failed: "));
       Serial.println(error.f_str());
       return;
@@ -65,38 +67,44 @@ void loop() {
     double left = doc["left_speed"];
     double right = doc["right_speed"];
 
-    if(left > 0){
-      analogWrite(L_Forward, left * 255);
+    if (left > 0)
+    {
       leftForward = left;
       leftBackward = 0;
-    } else if(left < 0) {
-      analogWrite(L_Back, -left * 255);
+    }
+    else if (left < 0)
+    {
       leftForward = 0;
       leftBackward = -left;
-    } else {
-      analogWrite(L_Forward, 0);
-      analogWrite(L_Back, 0);
+    }
+    else
+    {
       leftForward = 0;
       leftBackward = 0;
     }
+    analogWrite(L_Forward, leftForward * 192);
+    analogWrite(L_Back, leftBackward * 192);
 
-    if(right > 0){
-      analogWrite(R_Forward, right * 255);
+    if (right > 0)
+    {
       rightForward = right;
       rightBackward = 0;
-    } else if(right < 0) {
-      analogWrite(R_Back, -right * 255);
+    }
+    else if (right < 0)
+    {
       rightForward = 0;
       rightBackward = -right;
-    } else {
-      analogWrite(R_Forward, 0);
-      analogWrite(R_Back, 0);
+    }
+    else
+    {
       rightForward = 0;
       rightBackward = 0;
     }
+    analogWrite(R_Forward, rightForward * 192);
+    analogWrite(R_Back, rightBackward * 192);
 
-    Serial.printf(" forward left: %f, right: %f\n", leftForward, rightForward);
-    Serial.printf("backward left: %f, right: %f\n\n", leftBackward,rightBackward);
+    // Serial.printf(" forward left: %f, right: %f\n", leftForward, rightForward);
+    // Serial.printf("backward left: %f, right: %f\n\n", leftBackward,rightBackward);
 
     // 返送(失敗)
 
